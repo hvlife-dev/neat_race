@@ -20,7 +20,7 @@ impl Point {
     }
 } 
 
-pub fn point_in_polygon(point: &Point, polygon: &Vec<Point>) -> bool {
+pub fn point_in_polygon(point: &Point, polygon: &[Point]) -> bool {
     let mut intersections = 0;
     for i in 0..polygon.len() {
         let a = polygon[i].clone();
@@ -38,7 +38,7 @@ pub fn distance(p1: &Point, p2: &Point) -> f32 {
     ((p2.x - p1.x).powi(2) + (p2.y - p1.y).powi(2)).sqrt()
 }
 
-pub fn average_distance(points: &Vec<Point>) -> f32 {
+pub fn average_distance(points: &[Point]) -> f32 {
     let mut distance_sum = 0.0;
     for i in 0..points.len() {
         for j in (i + 1)..points.len() {

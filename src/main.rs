@@ -1,6 +1,5 @@
 use std::f32::consts::PI;
 use std::time::Instant;
-use std::usize;
 use macroquad::time::get_fps;
 use rand::prelude::*;
 
@@ -26,9 +25,8 @@ pub const WINDOW_SIZE: (u32, u32) = (1920, 1080);//(1600, 900);
 pub const TRACK_WIDTH: f32 = 110.0;
 pub const ENTITIES_AMOUNT: usize = 2000;  // amount of cars in one generation
 pub const RAY_AMOUNT: usize = 8;  // amount of rays on entities ( 16 best )
-pub const GEN_LEN: f32 = 20.0;  // max initial time for each generation
+pub const GEN_LEN: f32 = 30.0;  // max initial time for each generation
 pub const TEXT_COOLDOWN: f32 = 2.0;  // text fade after that time
-pub const STATIC_DT: bool = true;
 pub const RECURRENCE: bool = true;
 
 
@@ -44,7 +42,7 @@ async fn main() {
         TRACK_WIDTH,
     );
     let mut track_l = track.len();
-    let dst_mod = 1750.0 / average_distance(&track);
+    let dst_mod = 500.0 / average_distance(&track);
 
     let mut neat = NeatIntermittent::new( 
         &NN::new(RAY_AMOUNT + 2, 2, None, RECURRENCE, 0.75,
@@ -52,7 +50,7 @@ async fn main() {
         ENTITIES_AMOUNT, 7 );
     neat.speciate();
     let mut cars = vec![];
-    (0..neat.agents.len()).into_iter().for_each(|_| 
+    (0..neat.agents.len()).for_each(|_| 
         cars.push(
             Car::new(
                 vec![Point::new(-13.0, -20.0), Point::new(13.0, -20.0), Point::new(13.0, 20.0), Point::new(-13.0, 20.0)], 
@@ -65,17 +63,16 @@ async fn main() {
 
     let mut alive_sum: usize = ENTITIES_AMOUNT;
 
-    let mut clock = Instant::now();
+    let mut clock = 0f32;
     let mut dt: f32;
-    let mut dt_clock = Instant::now();
     let mut generation: usize = 0;
     let mut fta = FrameTimeAnalyzer::new(32);
     
     loop {
         //println!("{:?}", neat.agents[0]);
         // move to next gen
-        if clock.elapsed().as_secs_f32() > GEN_LEN + generation as f32 * 3.0 || alive_sum < 1 {
-            clock = Instant::now();
+        if clock > GEN_LEN + generation as f32 * 2.0 || alive_sum < 1 {
+            clock = 0f32;
             generation += 1;
             
             // generate track
@@ -96,7 +93,7 @@ async fn main() {
 
             cars.clear();
 
-            (0..neat.agents.len()).into_iter().for_each(|_| 
+            (0..neat.agents.len()).for_each(|_| 
                 cars.push(
                     Car::new(
                         vec![Point::new(-13.0, -20.0), Point::new(13.0, -20.0), Point::new(13.0, 20.0), Point::new(-13.0, 20.0)], 
@@ -108,8 +105,8 @@ async fn main() {
             );
         }
 
-        dt = if STATIC_DT { 0.03333 } else { dt_clock.elapsed().as_secs_f32() };
-        dt_clock = Instant::now();
+        dt = 0.03333;
+        clock += dt;
         if is_key_pressed(KeyCode::Q) {return;}
         
         alive_sum = cars.iter().filter(|c| c.alive ).count();
@@ -140,7 +137,7 @@ async fn main() {
             c.alive = !c.points.iter().any(|p|{ // death check 
                 point_in_polygon(p, &track) ||
                 !point_in_polygon(p, &track2) ||
-                c.distance.abs() + 3 < ( clock.elapsed().as_secs_f32() * dst_mod ) as isize
+                c.distance.abs() + 3 < ( clock * dst_mod ) as isize
             });
             a.active = c.alive;
             a.fitness = c.agility.max(0.001);}
@@ -204,7 +201,7 @@ async fn main() {
         // gen number
         draw_text(&("GEN: ".to_owned() + &(generation).to_string()), 10.0, WINDOW_SIZE.1 as f32 - 10.0, 50.0, DARKGRAY);
         // time
-        draw_text(&("Time: ".to_owned() + &(clock.elapsed().as_secs()).to_string()), 10.0, WINDOW_SIZE.1 as f32 - 50.0, 30.0, DARKGRAY);
+        draw_text(&("Time: ".to_owned() + &(clock).to_string()), 10.0, WINDOW_SIZE.1 as f32 - 50.0, 30.0, DARKGRAY);
         // alive number
         draw_text(&("SUM: ".to_owned() + &(alive_sum).to_string()), WINDOW_SIZE.0 as f32 - 200.0, WINDOW_SIZE.1 as f32 - 10.0, 50.0, DARKGRAY);
 
@@ -294,7 +291,7 @@ impl FrameTimeAnalyzer {
 
 fn conf() -> Conf {
     let p = Platform {
-        linux_backend: macroquad::miniquad::conf::LinuxBackend::X11WithWaylandFallback,
+        linux_backend: macroquad::miniquad::conf::LinuxBackend::WaylandOnly,
         ..Default::default()
     };
     Conf {
@@ -302,7 +299,7 @@ fn conf() -> Conf {
         window_width: WINDOW_SIZE.0 as i32,
         window_height: WINDOW_SIZE.1 as i32,
         fullscreen: false,
-        sample_count: 16,
+        sample_count: 8,
         platform: p,
         ..Default::default()
     }

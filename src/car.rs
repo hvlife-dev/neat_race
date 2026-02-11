@@ -89,8 +89,8 @@ impl Car {
 }
 
 
-fn raycast(point: &Point, angle: f32, polygon: &Vec<Point>) -> Option<Point> {
-    let mut min_t = std::f32::MAX;
+fn raycast(point: &Point, angle: f32, polygon: &[Point]) -> Option<Point> {
+    let mut min_t = f32::MAX;
     let mut intersection: Option<Point> = None;
 
     let x = point.x;
@@ -116,7 +116,7 @@ fn raycast(point: &Point, angle: f32, polygon: &Vec<Point>) -> Option<Point> {
     intersection
 }
 
-pub fn raywrap(point: &Point, angle: f32, amount: usize, track: &Vec<Point>, track2: &Vec<Point>) -> (Vec<f32>, Vec<Point>) {
+pub fn raywrap(point: &Point, angle: f32, amount: usize, track: &[Point], track2: &[Point]) -> (Vec<f32>, Vec<Point>) {
     let mut dsts: Vec<f32> = vec![];
     let mut pp: Vec<Point> = vec![];
 
